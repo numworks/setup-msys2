@@ -10,8 +10,12 @@ jobs:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v1
-    - name: install deps
-      run: npm ci
+    - name: build action
+      shell: bash
+      run: |
+        npm ci
+        npm run build
+        rm -rf node_modules
     - name: run action
       uses: ./
     - name: test MSYS
@@ -31,8 +35,12 @@ jobs:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v1
-    - name: install deps
-      run: npm ci
+    - name: build action
+      shell: bash
+      run: |
+        npm ci
+        npm run build
+        rm -rf node_modules
     - name: run action
       uses: ./
     - name: test MSYS
@@ -55,8 +63,12 @@ jobs:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v1
-    - name: install deps
-      run: npm ci
+    - name: build action
+      shell: bash
+      run: |
+        npm ci
+        npm run build
+        rm -rf node_modules
     - name: run action
       uses: ./
     - name: test MSYS
@@ -79,8 +91,12 @@ jobs:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v1
-    - name: install deps
-      run: npm ci
+    - name: build action
+      shell: bash
+      run: |
+        npm ci
+        npm run build
+        rm -rf node_modules
     - name: run action
       uses: ./
       with:
@@ -94,8 +110,12 @@ jobs:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v1
-    - name: install deps
-      run: npm ci
+    - name: build action
+      shell: bash
+      run: |
+        npm ci
+        npm run build
+        rm -rf node_modules
     - name: run action
       uses: ./
       with:
@@ -106,21 +126,33 @@ jobs:
   MSYS2_PATH_TYPE:
     runs-on: windows-latest
     steps:
-      - uses: actions/setup-go@v1
-      - uses: actions/checkout@v1
-      - run: yarn
-      - uses: ./
-      - run: msys2do go env
-        env:
-          MSYS2_PATH_TYPE: inherit
+    - uses: actions/setup-go@v1
+    - uses: actions/checkout@v1
+    - name: build action
+      shell: bash
+      run: |
+        npm ci
+        npm run build
+        rm -rf node_modules
+    - name: run action
+      uses: ./
+    - run: msys2do go env
+      env:
+        MSYS2_PATH_TYPE: inherit
 
   path-type:
     runs-on: windows-latest
     steps:
-      - uses: actions/setup-go@v1
-      - uses: actions/checkout@v1
-      - run: yarn
-      - uses: ./
-        with:
-          path-type: inherit
-      - run: msys2do go env
+    - uses: actions/setup-go@v1
+    - uses: actions/checkout@v1
+    - name: build action
+      shell: bash
+      run: |
+        npm ci
+        npm run build
+        rm -rf node_modules
+    - name: run action
+      uses: ./
+      with:
+        path-type: inherit
+    - run: msys2do go env
