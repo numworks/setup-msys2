@@ -18,16 +18,12 @@ jobs:
         rm -rf node_modules
     - name: run action
       uses: ./
-    - name: test MSYS
+    - name: test
       run: |
         $env:MSYSTEM = 'MSYS'
         msys2 ./test.sh MSYS
-    - name: test MINGW64
-      run: |
         $env:MSYSTEM = 'MINGW64'
         msys2 ./test.sh MINGW64
-    - name: test MINGW32
-      run: |
         $env:MSYSTEM = 'MINGW32'
         msys2 ./test.sh MINGW32
 
@@ -43,19 +39,13 @@ jobs:
         rm -rf node_modules
     - name: run action
       uses: ./
-    - name: test MSYS
+    - name: test
       shell: cmd
       run: |
         set MSYSTEM=MSYS
         msys2 ./test.sh MSYS
-    - name: test MINGW64
-      shell: cmd
-      run: |
         set MSYSTEM=MINGW64
         msys2 ./test.sh MINGW64
-    - name: test MINGW32
-      shell: cmd
-      run: |
         set MSYSTEM=MINGW32
         msys2 ./test.sh MINGW32
 
