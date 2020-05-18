@@ -27,7 +27,7 @@ async function run() {
 
     if (!update) {
       drive = '%~dp0';
-      const distrib = await tc.downloadTool('https://github.com/msys2/msys2-installer/releases/download/2020-05-22/msys2-base-x86_64-20200522.tar.xz');
+      const distrib = await tc.downloadTool('https://github.com/msys2/msys2-installer/releases/download/nightly-x86_64/msys2-base-x86_64-latest.tar.xz');
       await exec.exec('bash', ['-c', `7z x ${distrib.replace(/\\/g, '/')} -so | 7z x -aoa -si -ttar`], {cwd: dest} );
     }
 
