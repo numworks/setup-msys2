@@ -1,21 +1,55 @@
 # Setup MSYS2
 
 <p align="center">
-  <a title="Dependency Status" href="https://david-dm.org/numworks/setup-msys2"><img src="https://img.shields.io/david/numworks/setup-msys2.svg?longCache=true&logo=npm&label=deps"></a><!--
+  <a title="'action' workflow Status" href="https://github.com/eine/setup-msys2/actions?query=workflow%3Aaction"><img alt="'action' workflow Status" src="https://img.shields.io/github/workflow/status/eine/setup-msys2/action?longCache=true&style=flat-square&label=action&logo=github"></a><!--
   -->
-  <a title="'action' workflow Status" href="https://github.com/numworks/setup-msys2/actions"><img alt="'action' workflow Status" src="https://github.com/numworks/setup-msys2/workflows/action/badge.svg"></a>
+  <a title="Dependency Status" href="https://david-dm.org/eine/setup-msys2"><img src="https://img.shields.io/david/eine/setup-msys2.svg?longCache=true&style=flat-square&label=deps&logo=npm"></a>
 </p>
 
-**setup-msys2** is a JavaScript GitHub Action (GHA) to setup a full-featured [MSYS2](https://www.msys2.org/) environment, using the GHA [toolkit](https://github.com/actions/toolkit).
+[MSYS2](https://www.msys2.org/) is available by default in [windows-latest](https://github.com/actions/virtual-environments/blob/master/images/win/Windows2019-Readme.md#msys2) virtual environment for GitHub Actions. However, the default installation is updated and it includes some pre-installed packages. Moreover, it is neither added to the PATH nor available as a custom `shell` option.
 
-The latest tarball available at [repo.msys2.org/distrib/x86_64](http://repo.msys2.org/distrib/x86_64/) is cached. Using the action extracts it and provides an entrypoint named `msys2do`.
+**setup-msys2** is a JavaScript GitHub Action (GHA) to optionally setup a stable [MSYS2](https://www.msys2.org/) environment in a temporal location, using the GHA [toolkit](https://github.com/actions/toolkit); and to provide two custom entrypoints.
+
+If option `update` is `true`, the default installation is used, in order to reduce startup latency. Otherwise, the latest tarball available at [repo.msys2.org/distrib/x86_64](http://repo.msys2.org/distrib/x86_64/) is downloaded and extracted.
 
 ## Usage
 
 ```yaml
-  - uses: numworks/setup-msys2@v1
-  - run: msys2do uname -a
+  - uses: eine/setup-msys2@v1
 ```
+
+Then, for multi-line scripts:
+
+```yaml
+  - shell: msys2 {0}
+    run: |
+      uname -a
+```
+
+Or, for single line commands:
+
+```yaml
+  - run: msys2 uname -a
+```
+
+It is also possible to set `msys2` as the default shell. For example:
+
+```yaml
+  defaults:
+    run:
+      shell: msys2 {0}
+  steps:
+  - uses: eine/setup-msys2@v1
+    with:
+      update: true
+      install: base-devel git
+  #- run: git config --global core.autocrlf input
+  #  shell: bash
+  - uses: actions/checkout@v2
+  - run: git describe --dirty
+```
+
+Note that setting `autocrlf` is required in specific use cases only. See [actions/checkout#250](https://github.com/actions/checkout/issues/250).
 
 ### Options
 
@@ -24,7 +58,7 @@ The latest tarball available at [repo.msys2.org/distrib/x86_64](http://repo.msys
 By default, `MSYSTEM` is set to `MINGW64`. However, an optional parameter named `msystem` is supported, which expects `MSYS`, `MINGW64` or `MING32`. For example:
 
 ```yaml
-  - uses: numworks/setup-msys2@v1
+  - uses: eine/setup-msys2@v1
     with:
       msystem: MSYS
 ```
@@ -32,40 +66,53 @@ By default, `MSYSTEM` is set to `MINGW64`. However, an optional parameter named 
 Furthermore, the environment variable can be overriden. This is useful when multiple commands need to be executed in different contexts. For example, in order to build a PKGBUILD file and then test the installed artifact:
 
 ```yaml
-  - uses: numworks/setup-msys2@v1
+  - uses: eine/setup-msys2@v1
     with:
       msystem: MSYS
-  - run: msys2do makepkg-mingw -sCLfc --noconfirm --noprogressbar
-  - run: msys2do pacman --noconfirm -U mingw-w64-*-any.pkg.tar.xz
+  - shell: msys2 {0}
+    run: |
+      makepkg-mingw -sCLfc --noconfirm --noprogressbar
+      pacman --noconfirm -U mingw-w64-*-any.pkg.tar.xz
   - run: |
       set MSYSTEM=MINGW64
-      msys2do <command to test the package>
+      msys2 <command to test the package>
 ```
 
 #### path-type
 
-By default, `MSYS2_PATH_TYPE` is set to `strict` by `msys2do`. It is possible to override it either using an option or setting the environment variable explicitly:
+By default, `MSYS2_PATH_TYPE` is set to `strict` by `msys2`. It is possible to override it either using an option or setting the environment variable explicitly:
 
 ```yaml
-  - uses: numworks/setup-msys2@v1
+  - uses: eine/setup-msys2@v1
     with:
       path-type: inherit
-  - run: msys2do <command>
+  - run: msys2 <command>
 ```
 
 ```yaml
-  - uses: numworks/setup-msys2@v1
-  - run: msys2do <command>
+  - uses: eine/setup-msys2@v1
+  - run: msys2 <command>
     env:
       MSYS2_PATH_TYPE: inherit
 ```
 
 #### update
 
-By default, the installation is not updated; hence package versions are those of the installation tarball. By setting option `update` to `true`, the action will execute `pacman -Syu --no-confirm`:
+By default, the installation is not updated; hence package versions are those of the installation tarball. By setting option `update` to `true`, the action will try to update the runtime and packages cleanly:
 
 ```yaml
-  - uses: numworks/setup-msys2@v1
+  - uses: eine/setup-msys2@v1
     with:
       update: true
+```
+
+#### install
+
+Installing additional packages after updating the system is supported through option `install`. The package or list of packages are intalled through `pacman --noconfirm -S`.
+
+```yaml
+  - uses: eine/setup-msys2@v1
+    with:
+      update: true
+      install: 'git base-devel'
 ```

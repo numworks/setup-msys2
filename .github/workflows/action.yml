@@ -1,0 +1,236 @@
+name: 'action'
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '0 0 * * 3,6'
+jobs:
+
+  powershell:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: build action
+      shell: bash
+      run: |
+        npm ci
+        npm run pkg
+        rm -rf node_modules
+    - name: run action
+      uses: ./
+    - name: test
+      run: |
+        $env:MSYSTEM = 'MSYS'
+        msys2 ./test.sh MSYS
+        $env:MSYSTEM = 'MINGW64'
+        msys2 ./test.sh MINGW64
+        $env:MSYSTEM = 'MINGW32'
+        msys2 ./test.sh MINGW32
+
+  cmd:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: build action
+      shell: bash
+      run: |
+        npm ci
+        npm run pkg
+        rm -rf node_modules
+    - name: run action
+      uses: ./
+    - name: test
+      shell: cmd
+      run: |
+        set MSYSTEM=MSYS
+        msys2 ./test.sh MSYS
+        set MSYSTEM=MINGW64
+        msys2 ./test.sh MINGW64
+        set MSYSTEM=MINGW32
+        msys2 ./test.sh MINGW32
+
+  env:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: build action
+      shell: bash
+      run: |
+        npm ci
+        npm run pkg
+        rm -rf node_modules
+    - name: run action
+      uses: ./
+    - name: test MSYS
+      run: msys2 ./test.sh MSYS
+      env:
+        MSYSTEM: MSYS
+    - name: test MINGW64
+      run: msys2 ./test.sh MINGW64
+      env:
+        MSYSTEM: MINGW64
+    - name: test MINGW32
+      run: msys2 ./test.sh MINGW32
+      env:
+        MSYSTEM: MINGW32
+
+  shell:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: build action
+      shell: bash
+      run: |
+        npm ci
+        npm run pkg
+        rm -rf node_modules
+    - name: run action
+      uses: ./
+    - shell: msys2 {0}
+      run: |
+        uname -a
+        pacman -Syu --noconfirm
+
+  msystem:
+    strategy:
+      matrix:
+        task: [ MSYS, MINGW64, MINGW32 ]
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: build action
+      shell: bash
+      run: |
+        npm ci
+        npm run pkg
+        rm -rf node_modules
+    - name: run action
+      uses: ./
+      with:
+        msystem: ${{ matrix.task }}
+    - run: msys2 ./test.sh ${{ matrix.task }}
+
+  update:
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        msystem: [ MSYS, MINGW64, MINGW32 ]
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: build action
+      shell: bash
+      run: |
+        npm ci
+        npm run pkg
+        rm -rf node_modules
+    - name: run action
+      uses: ./
+      with:
+        update: true
+        msystem: ${{ matrix.msystem }}
+    - run: msys2 ./test.sh ${{ matrix.msystem }}
+
+  MSYS2_PATH_TYPE:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/setup-go@v1
+    - uses: actions/checkout@v2
+    - name: build action
+      shell: bash
+      run: |
+        npm ci
+        npm run pkg
+        rm -rf node_modules
+    - name: run action
+      uses: ./
+    - run: msys2 go env
+      env:
+        MSYS2_PATH_TYPE: inherit
+
+  path-type:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/setup-go@v1
+    - uses: actions/checkout@v2
+    - name: build action
+      shell: bash
+      run: |
+        npm ci
+        npm run pkg
+        rm -rf node_modules
+    - name: run action
+      uses: ./
+      with:
+        path-type: inherit
+    - run: msys2 go env
+
+  install:
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        install: [ false, git, 'base-devel git' ]
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: build action
+      shell: bash
+      run: |
+        npm ci
+        npm run pkg
+        rm -rf node_modules
+    - name: run action
+      uses: ./
+      with:
+        update: true
+        install: ${{ matrix.install }}
+        msystem: MINGW64
+    - run: msys2 ./test.sh MINGW64
+
+  defaultclean:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+    - run: git config --global core.autocrlf input
+      shell: bash
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - name: build action
+      shell: bash
+      run: |
+        npm ci
+        npm run pkg
+        rm -rf node_modules
+    - name: run action
+      uses: ./
+      with:
+        update: true
+        install: base-devel git
+    - run: git describe --dirty --tags
+
+  defaultdirty:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - name: build action
+      shell: bash
+      run: |
+        npm ci
+        npm run pkg
+        rm -rf node_modules
+    - name: run action
+      uses: ./
+      with:
+        update: true
+        install: base-devel git
+    - run: git describe --dirty --tags
